@@ -7,11 +7,11 @@ export default class PhotoApiService {
   constructor() {
     this.searchQuery = '';
     this.page = 1;
+    this.totalLoadedPhoto = 0;
+    this.totalHits = 0;
   }
 
   fetchPhotos() {
-    console.log(this);
-
     const options = {
       params: {
         key: API_KEY,
@@ -24,9 +24,11 @@ export default class PhotoApiService {
       },
     };
 
-    return axios.get(`${BASE_URL}`, options).then(data => {
+    return axios.get(`${BASE_URL}`, options).then(photos => {
       this.incrementPage();
-      return data.data.hits;
+      this.incrementQuantityLoadedPhoto(photos.data.hits.length);
+      this.totalHits = photos.data.totalHits;
+      return photos.data;
     });
   }
 
@@ -34,8 +36,20 @@ export default class PhotoApiService {
     this.page += 1;
   }
 
+  incrementQuantityLoadedPhoto(value) {
+    this.totalLoadedPhoto += value;
+  }
+
   resetPage() {
     this.page = 1;
+  }
+
+  resetTotalLoadedPhoto() {
+    this.totalLoadedPhoto = 0;
+  }
+
+  resettotalHits() {
+    this.totalHits = 0;
   }
 
   get query() {

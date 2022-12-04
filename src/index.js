@@ -1,31 +1,76 @@
 import './css/styles.css';
 import PhotoApiService from './photo-service';
+import LoadMoreBtn from './load-more-btn';
+import SimpleLightbox from 'simplelightbox';
+import 'simplelightbox/dist/simple-lightbox.min.css';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 const photosApiService = new PhotoApiService();
 
-console.log(photosApiService);
+const loadMoreBtn = new LoadMoreBtn({
+  selector: '[data-action="load-more"]',
+  hidden: true,
+});
 
 refs = {
   searchForm: document.querySelector('#search-form'),
-  loadMoreBtn: document.querySelector('.load-more'),
   gallery: document.querySelector('.gallery'),
 };
 
-console.log(refs.loadMoreBtn);
+const lightbox = new SimpleLightbox('.gallery a', {
+  scrollZoom: false,
+});
 
 refs.searchForm.addEventListener('submit', onSearch);
-refs.loadMoreBtn.addEventListener('click', onLoadMoreBtnClick);
+loadMoreBtn.refs.button.addEventListener('click', onLoadMoreBtnClick);
 
 function onSearch(e) {
   e.preventDefault();
 
-  photosApiService.query = e.currentTarget.elements.searchQuery.value;
+  photosApiService.query = e.currentTarget.elements.searchQuery.value.trim();
+  if (!photosApiService.query) {
+    Notify.failure('Sorry, but you must enter a value');
+    return;
+  }
   photosApiService.resetPage();
-  photosApiService.fetchPhotos().then(renderPhotos);
+  photosApiService.resetTotalLoadedPhoto();
+  photosApiService.resettotalHits();
+  loadMoreBtn.hide();
+
+  photosApiService.fetchPhotos().then(photo => {
+    if (photo.hits.length === 0) {
+      Notify.failure(
+        'Sorry, there are no images matching your search query. Please try again.'
+      );
+      return;
+    }
+
+    Notify.success(`Hooray! We found ${photo.totalHits} images.`);
+    clearPhotosContainer();
+    renderPhotos(photo.hits);
+
+    if (photosApiService.totalLoadedPhoto >= photosApiService.totalHits) {
+      Notify.failure(
+        "We're sorry, but you've reached the end of search results."
+      );
+      return;
+    }
+
+    loadMoreBtn.show();
+  });
 }
 
 function onLoadMoreBtnClick() {
-  photosApiService.fetchPhotos().then(photos => console.log(photos));
+  photosApiService.fetchPhotos().then(photo => {
+    renderPhotos(photo.hits);
+    if (photosApiService.totalLoadedPhoto >= photosApiService.totalHits) {
+      Notify.failure(
+        "We're sorry, but you've reached the end of search results."
+      );
+      loadMoreBtn.hide();
+      return;
+    }
+  });
 }
 
 function renderPhotos(photos) {
@@ -38,9 +83,12 @@ function renderPhotos(photos) {
         views,
         comments,
         downloads,
+        largeImageURL,
       }) => `<div class="photo-card">
       <div class='thumb'>
-      <img src="${webformatURL}" alt="${tags}" loading="lazy" />
+      <a class="gallery__item link" href="${largeImageURL}">
+      <img class="gallery__image" src="${webformatURL}" alt="${tags}" loading="lazy" />
+      </a>
       </div>
       <div class="info">
         <p class="info-item">
@@ -60,7 +108,19 @@ function renderPhotos(photos) {
     )
     .join('');
 
-  refs.gallery.innerHTML = template;
+  refs.gallery.insertAdjacentHTML('beforeEnd', template);
+  lightbox.refresh();
 
-  // refs.searchForm.insertAdjacentHTML('afterEnd', template);
+  const { height: cardHeight } = document
+    .querySelector('.gallery')
+    .firstElementChild.getBoundingClientRect();
+
+  window.scrollBy({
+    top: cardHeight * 2,
+    behavior: 'smooth',
+  });
+}
+
+function clearPhotosContainer() {
+  refs.gallery.innerHTML = '';
 }

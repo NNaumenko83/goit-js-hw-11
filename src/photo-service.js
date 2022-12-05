@@ -11,8 +11,8 @@ export default class PhotoApiService {
     this.totalHits = 0;
   }
 
-  fetchPhotos() {
-    const options = {
+  async fetchPhotos() {
+    const config = {
       params: {
         key: API_KEY,
         q: `${encodeURIComponent(this.searchQuery)}`,
@@ -24,12 +24,13 @@ export default class PhotoApiService {
       },
     };
 
-    return axios.get(`${BASE_URL}`, options).then(photos => {
-      this.incrementPage();
-      this.incrementQuantityLoadedPhoto(photos.data.hits.length);
-      this.totalHits = photos.data.totalHits;
-      return photos.data;
-    });
+    const response = await axios.get(`${BASE_URL}`, config);
+    const photosData = response.data;
+    const photosArray = photosData.hits;
+    this.incrementPage();
+    this.incrementQuantityLoadedPhoto(photosArray.length);
+    this.totalHits = photosData.totalHits;
+    return photosData;
   }
 
   incrementPage() {

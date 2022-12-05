@@ -24,30 +24,43 @@ const lightbox = new SimpleLightbox('.gallery a', {
 refs.searchForm.addEventListener('submit', onSearch);
 loadMoreBtn.refs.button.addEventListener('click', onLoadMoreBtnClick);
 
-function onSearch(e) {
+async function onSearch(e) {
   e.preventDefault();
 
+  if (
+    photosApiService.query === e.currentTarget.elements.searchQuery.value.trim()
+  ) {
+    return;
+  }
+
+  clearPhotosContainer();
+
   photosApiService.query = e.currentTarget.elements.searchQuery.value.trim();
+
   if (!photosApiService.query) {
     Notify.failure('Sorry, but you must enter a value');
     return;
   }
+
   photosApiService.resetPage();
   photosApiService.resetTotalLoadedPhoto();
   photosApiService.resettotalHits();
   loadMoreBtn.hide();
 
-  photosApiService.fetchPhotos().then(photo => {
-    if (photo.hits.length === 0) {
+  try {
+    const photosResponse = await photosApiService.fetchPhotos();
+    const photoArray = photosResponse.hits;
+
+    if (photoArray.length === 0) {
       Notify.failure(
         'Sorry, there are no images matching your search query. Please try again.'
       );
       return;
     }
 
-    Notify.success(`Hooray! We found ${photo.totalHits} images.`);
-    clearPhotosContainer();
-    renderPhotos(photo.hits);
+    Notify.success(`Hooray! We found ${photosResponse.totalHits} images.`);
+
+    renderPhotos(photoArray);
 
     if (photosApiService.totalLoadedPhoto >= photosApiService.totalHits) {
       Notify.failure(
@@ -57,12 +70,17 @@ function onSearch(e) {
     }
 
     loadMoreBtn.show();
-  });
+  } catch (err) {
+    console.log(err);
+  }
 }
 
-function onLoadMoreBtnClick() {
-  photosApiService.fetchPhotos().then(photo => {
-    renderPhotos(photo.hits);
+async function onLoadMoreBtnClick() {
+  try {
+    const photosResponse = await photosApiService.fetchPhotos();
+    const photoArray = await photosResponse.hits;
+
+    renderPhotos(photoArray);
     if (photosApiService.totalLoadedPhoto >= photosApiService.totalHits) {
       Notify.failure(
         "We're sorry, but you've reached the end of search results."
@@ -70,7 +88,9 @@ function onLoadMoreBtnClick() {
       loadMoreBtn.hide();
       return;
     }
-  });
+  } catch (err) {
+    console.log(err);
+  }
 }
 
 function renderPhotos(photos) {

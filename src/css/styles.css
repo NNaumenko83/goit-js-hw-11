@@ -33,17 +33,19 @@ body {
   padding-top: 70px;
 }
 
-.gallery__item {
-  transition-property: all;
-  transition-duration: 250ms;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
 .info {
   display: flex;
   justify-content: space-evenly;
   background-color: azure;
   padding: 5px;
+
+  flex-wrap: wrap;
+}
+
+.gallery__item {
+  transition-property: all;
+  transition-duration: 250ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .info-item {

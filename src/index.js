@@ -28,6 +28,15 @@ async function onSearch(e) {
   e.preventDefault();
 
   if (
+    photosApiService.query ===
+      e.currentTarget.elements.searchQuery.value.trim() &&
+    !photosApiService.query
+  ) {
+    Notify.failure('Sorry, but you must enter a value');
+    return;
+  }
+
+  if (
     photosApiService.query === e.currentTarget.elements.searchQuery.value.trim()
   ) {
     return;

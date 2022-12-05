@@ -12,7 +12,7 @@ const loadMoreBtn = new LoadMoreBtn({
   hidden: true,
 });
 
-refs = {
+const refs = {
   searchForm: document.querySelector('#search-form'),
   gallery: document.querySelector('.gallery'),
 };

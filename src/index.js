@@ -39,6 +39,7 @@ async function onSearch(e) {
 
   if (!photosApiService.query) {
     Notify.failure('Sorry, but you must enter a value');
+    loadMoreBtn.hide();
     return;
   }
 
